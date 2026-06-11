@@ -1,8 +1,8 @@
+import argparse
 import csv
 import json
 import os
 import re #regex
-import sys
 
 
 #NOTE: anything after desc will be a collection ie [...]. These get further parsed and properly formatted
@@ -145,8 +145,21 @@ def show_menu():
         show_menu()
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Convert Zytra product data between .txt (JS array) and .csv formats."
+    )
+    parser.add_argument(
+        "path",
+        nargs="?",
+        help="Path to a .txt or .csv file to convert. If omitted, an interactive menu is shown.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        run_file(sys.argv[1])
+    args = parse_args()
+    if args.path:
+        run_file(args.path)
     else:
         show_menu()
