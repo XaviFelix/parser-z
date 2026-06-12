@@ -94,8 +94,9 @@ def format_lines(product_lines):
             out.append(f"      sockets: [{sockets}],\n")
             out.append("      specs: [\n")
 
-            for label, value in model["specs"]:
-                out.append(f"        [{json.dumps(label)}, {json.dumps(value)}],\n")
+            for label, value in model["specs"]: 
+                out.append(f"        [{json.dumps(label)}, {json.dumps(value)}],\n".replace("\\\\n", "\\n"))
+
             out.append("      ],\n")
             out.append("      images: [\n")
 
@@ -126,40 +127,81 @@ def run_file(path):
         raise SystemExit(f"Unsupported file type: {path!r} (expected a .txt or .csv file)")
 
 
+def run_dir(directory):
+    if not os.path.isdir(directory):
+        raise SystemExit(f"Not a directory: {directory!r}")
+
+    targets = sorted(
+        entry for entry in os.listdir(directory)
+        if entry.lower().endswith((".csv", ".txt"))
+        and os.path.isfile(os.path.join(directory, entry))
+    )
+
+    if not targets:
+        print(f"No .csv or .txt files found in {directory}")
+        return
+
+    for entry in targets:
+        run_file(os.path.join(directory, entry))
+
+    print(f"Done! Converted {len(targets)} file(s) in {directory}")
+
+
 def show_menu():
     print("=" * 40)
-    print("  Zytra Product Parser")
+    print("Product Parser Z")
     print("=" * 40)
     print("  1) Convert a .txt or .csv file")
-    print("  2) Quit")
+    print("  2) Convert all .txt/.csv files in a directory")
+    print("  3) Quit")
     print("-" * 40)
 
-    choice = input("Choose an option [1-2]: ").strip()
+    choice = input("Choose an option [1-3]: ").strip()
     if choice == "1":
         path = input("Enter the path to a .txt or .csv file: ").strip().strip('"')
         run_file(path)
     elif choice == "2":
+        directory = input("Enter the path to a directory: ").strip().strip('"')
+        run_dir(directory)
+    elif choice == "3":
         print("Goodbye!")
     else:
-        print(f"'{choice}' isn't a valid option, please choose 1 or 2.\n")
+        print(f"'{choice}' isn't a valid option, please choose 1-3.\n")
         show_menu()
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Convert Zytra product data between .txt (JS array) and .csv formats."
+        description="Convert Z product data between .txt (JS array) and .csv formats."
     )
     parser.add_argument(
         "path",
         nargs="?",
-        help="Path to a .txt or .csv file to convert. If omitted, an interactive menu is shown.",
+        help="Path to a .txt or .csv file to convert, or a directory when -x is used. "
+             "If omitted, an interactive menu is shown.",
     )
+    parser.add_argument(
+        "-x", "--batch",
+        action="store_true",
+        help="Treat 'path' as a directory and convert every .txt/.csv file inside it.",
+    )
+    parser.add_argument(
+        "-d", "--default",
+        action="store_true",
+        help="The default path is found in your_path",
+    )
+
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
     if args.path:
-        run_file(args.path)
+        if args.batch:
+            run_dir(args.path)
+        else:
+            run_file(args.path)
+    elif args.default:
+        run_dir(r"")
     else:
         show_menu()
